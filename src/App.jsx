@@ -4,6 +4,126 @@ import "./App.css";
 function App() {
   const [activeMenu, setActiveMenu] = useState("Dashboard");
 
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [showReceiptForm, setShowReceiptForm] = useState(false);
+  const [showDeliveryForm, setShowDeliveryForm] = useState(false);
+
+  const saveReceipt = () => {
+  const inputs = document.querySelectorAll("input");
+
+  const receiptNumber = inputs[0].value;
+  const productName = inputs[1].value;
+  const quantity = inputs[2].value;
+  const supplier = inputs[3].value;
+
+  if (!receiptNumber || !productName || !quantity || !supplier) {
+    alert("Please fill in all receipt details.");
+    return;
+  }
+
+  setReceipts((prev) => [
+    ...prev,
+    {
+      id: Date.now(),
+      receipt: receiptNumber,
+      product: productName,
+      quantity: `+${quantity}`,
+      supplier: supplier,
+      status: "Done",
+    },
+  ]);
+
+  setShowReceiptForm(false);
+};
+const [newProduct, setNewProduct] = useState({
+  name: "",
+  sku: "",
+  category: "",
+  uom: "",
+  stock: "",
+});
+const saveDelivery = () => {
+  const inputs = document.querySelectorAll("input");
+
+  const deliveryNumber = inputs[0].value;
+  const productName = inputs[1].value;
+  const quantity = inputs[2].value;
+  const customer = inputs[3].value;
+
+  if (!deliveryNumber || !productName || !quantity || !customer) {
+    alert("Please fill in all delivery details.");
+    return;
+  }
+
+  setDeliveries((prev) => [
+    ...prev,
+    {
+      id: Date.now(),
+      delivery: deliveryNumber,
+      product: productName,
+      quantity: `-${quantity}`,
+      customer: customer,
+      status: "Pending",
+    },
+  ]);
+
+  setShowDeliveryForm(false);
+};
+
+const [receipts, setReceipts] = useState([
+  {
+    id: 1,
+    receipt: "WH/IN/0001",
+    product: "Steel Rods",
+    quantity: "+100 kg",
+    supplier: "Tata Steel",
+    status: "Done",
+  },
+  {
+    id: 2,
+    receipt: "WH/IN/0002",
+    product: "Copper Wire",
+    quantity: "+250 m",
+    supplier: "ABC Metals",
+    status: "Done",
+  },
+  {
+    id: 3,
+    receipt: "WH/IN/0003",
+    product: "Office Chairs",
+    quantity: "+40 Units",
+    supplier: "Furniture Hub",
+    status: "Pending",
+  },
+]);
+const [deliveries, setDeliveries] = useState([
+  {
+    id: 1,
+    delivery: "WH/OUT/0001",
+    product: "Office Chairs",
+    quantity: "-20 Units",
+    customer: "ABC Office",
+    status: "Done",
+  },
+  {
+    id: 2,
+    delivery: "WH/OUT/0002",
+    product: "Steel Rods",
+    quantity: "-10 kg",
+    customer: "BuildPro",
+    status: "Pending",
+  },
+  {
+    id: 3,
+    delivery: "WH/OUT/0003",
+    product: "Copper Wire",
+    quantity: "-50 m",
+    customer: "TechWorks",
+    status: "Pending",
+  },
+]);
+
+
   const [products, setProducts] = useState([
   {
     id: 1,
@@ -44,19 +164,19 @@ function App() {
   const stats = [
     {
       title: "Total Products",
-      value: "1,248",
+      value: products.length.toString(),
       change: "+8.2%",
       icon: "📦",
     },
     {
       title: "Low Stock",
-      value: "24",
+      value: products.filter(product => product.stock < 20).length.toString(),
       change: "Needs attention",
       icon: "⚠️",
     },
     {
       title: "Pending Receipts",
-      value: "18",
+      value: receipts.filter(receipt => receipt.status === "Pending").length.toString(),
       change: "6 arriving today",
       icon: "🚚",
     },
@@ -295,19 +415,411 @@ function App() {
           </>
         )}
 
-        {/* OTHER PAGES */}
-        {activeMenu !== "Dashboard" && (
-          <section className="coming-soon">
-            <div>🚧</div>
-            <h2>{activeMenu}</h2>
-            <p>
-              This module will be connected to the StockSense
-              inventory system next.
-            </p>
-          </section>
-        )}
+        {/* PRODUCTS PAGE */}
+{activeMenu === "Products" && (
+  <section>
+    <div className="filter-section">
+      <div>
+        <h3>Products</h3>
+        <p>Manage products and current stock levels</p>
+      </div>
 
-      </main>
+      <button
+        className="view-btn"
+        onClick={() => setShowProductForm(true)}
+      >
+        + Add Product
+      </button>
+    </div>
+
+    {showProductForm && (
+  <div className="table-card product-form-card">
+    <div className="table-header">
+      <div>
+        <h3>Add New Product</h3>
+        <p>Enter product details and initial stock</p>
+      </div>
+
+      <button
+        className="view-btn"
+        onClick={() => setShowProductForm(false)}
+      >
+        Cancel
+      </button>
+    </div>
+
+    <div className="product-form">
+      <input
+        type="text"
+        placeholder="Product Name"
+        value={newProduct.name}
+        onChange={(e) =>
+          setNewProduct({ ...newProduct, name: e.target.value })
+        }
+      />
+
+      <input
+        type="text"
+        placeholder="SKU"
+        value={newProduct.sku}
+        onChange={(e) =>
+          setNewProduct({ ...newProduct, sku: e.target.value })
+        }
+      />
+
+      <input
+        type="text"
+        placeholder="Category"
+        value={newProduct.category}
+        onChange={(e) =>
+          setNewProduct({ ...newProduct, category: e.target.value })
+        }
+      />
+
+      <input
+        type="text"
+        placeholder="Unit of Measure (kg, units, m)"
+        value={newProduct.uom}
+        onChange={(e) =>
+          setNewProduct({ ...newProduct, uom: e.target.value })
+        }
+      />
+
+      <input
+        type="number"
+        placeholder="Initial Stock"
+        value={newProduct.stock}
+        onChange={(e) =>
+          setNewProduct({ ...newProduct, stock: e.target.value })
+        }
+      />
+
+      <button
+        className="view-btn"
+        onClick={() => {
+          if (!newProduct.name || !newProduct.sku) {
+            alert("Product name and SKU are required.");
+            return;
+          }
+
+          setProducts([
+            ...products,
+            {
+              id: Date.now(),
+              ...newProduct,
+              stock: Number(newProduct.stock) || 0,
+            },
+          ]);
+
+          setNewProduct({
+            name: "",
+            sku: "",
+            category: "",
+            uom: "",
+            stock: "",
+          });
+
+          setShowProductForm(false);
+        }}
+      >
+        Save Product
+      </button>
+    </div>
+  </div>
+)}
+<div className="table-card">
+      <div className="table-header">
+        <div>
+          <h3>Product Inventory</h3>
+          <p>{products.length} products in the system</p>
+        </div>
+      </div>
+
+      <div className="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>PRODUCT</th>
+              <th>SKU</th>
+              <th>CATEGORY</th>
+              <th>UOM</th>
+              <th>STOCK</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {products.map((product) => (
+              <tr key={product.id}>
+                <td>
+                  <strong>{product.name}</strong>
+                </td>
+                <td>{product.sku}</td>
+                <td>{product.category}</td>
+                <td>{product.uom}</td>
+                <td>
+                  <strong>{product.stock}</strong>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+)}
+
+{/* RECEIPTS PAGE */}
+{activeMenu === "Receipts" && (
+  <section className="page-section">
+    <div className="filter-section">
+      <div>
+        <h2>Receipts</h2>
+        <p>Track incoming stock and received products</p>
+      </div>
+
+<button
+  className="view-btn"
+  onClick={() => setShowReceiptForm(true)}
+>
+  + New Receipt
+</button>
+    </div>
+    {showReceiptForm && (
+  <div className="table-card" style={{ marginBottom: "20px" }}>
+    <div className="table-header">
+      <div>
+        <h3>New Receipt</h3>
+        <p>Enter incoming stock details</p>
+      </div>
+
+      <button
+        className="view-btn"
+        onClick={() => setShowReceiptForm(false)}
+      >
+        Cancel
+      </button>
+    </div>
+
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(2, 1fr)",
+      gap: "15px",
+      padding: "20px"
+    }}>
+      <input
+        type="text"
+        placeholder="Receipt Number"
+      />
+
+      <input
+        type="text"
+        placeholder="Product Name"
+      />
+
+      <input
+        type="number"
+        placeholder="Quantity"
+      />
+
+      <input
+        type="text"
+        placeholder="Supplier"
+      />
+
+      <input
+        type="text"
+        placeholder="Location"
+      />
+
+      <input
+        type="date"
+      />
+
+      <button
+        className="view-btn"
+        style={{ gridColumn: "1 / -1" }}
+        onClick={saveReceipt}     
+ >
+        Save Receipt
+      </button>
+    </div>
+  </div>
+)}
+
+    <div className="table-card">
+      <div className="table-header">
+        <div>
+          <h3>Recent Receipts</h3>
+          <p>Latest incoming inventory</p>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Receipt</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Supplier</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+  {receipts.map((receipt) => (
+    <tr key={receipt.id}>
+      <td>{receipt.receipt}</td>
+      <td>{receipt.product}</td>
+      <td>{receipt.quantity}</td>
+      <td>{receipt.supplier}</td>
+      <td>
+        <span className="status-badge">
+          {receipt.status}
+        </span>
+      </td>
+    </tr>
+  ))}
+</tbody>
+      </table>
+    </div>
+  </section>
+)}
+
+{/* DELIVERIES PAGE */}
+{activeMenu === "Deliveries" && (
+  <section className="page-section">
+    <div className="filter-section">
+      <div>
+        <h2>Deliveries</h2>
+        <p>Track outgoing stock and customer shipments</p>
+      </div>
+
+<button
+  className="view-btn"
+  onClick={() => setShowDeliveryForm(true)}
+>
+  + New Delivery
+</button>
+    </div>
+    {showDeliveryForm && (
+  <div className="table-card" style={{ marginBottom: "20px" }}>
+    <div className="table-header">
+      <div>
+        <h3>New Delivery</h3>
+        <p>Enter outgoing stock details</p>
+      </div>
+
+      <button
+        className="view-btn"
+        onClick={() => setShowDeliveryForm(false)}
+      >
+        Cancel
+      </button>
+    </div>
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(2, 1fr)",
+        gap: "15px",
+        padding: "20px",
+      }}
+    >
+      <input
+        type="text"
+        placeholder="Delivery Number"
+      />
+
+      <input
+        type="text"
+        placeholder="Product Name"
+      />
+
+      <input
+        type="number"
+        placeholder="Quantity"
+      />
+
+      <input
+        type="text"
+        placeholder="Customer"
+      />
+
+      <input
+        type="text"
+        placeholder="Location"
+      />
+
+      <input
+        type="date"
+      />
+
+<button
+  className="view-btn"
+  style={{ gridColumn: "1 / -1" }}
+  onClick={saveDelivery}
+>
+  Save Delivery
+</button>
+    </div>
+  </div>
+)}
+
+    <div className="table-card">
+      <div className="table-header">
+        <div>
+          <h3>Recent Deliveries</h3>
+          <p>Latest outgoing inventory</p>
+        </div>
+      </div>
+
+      <div className="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>DELIVERY</th>
+              <th>PRODUCT</th>
+              <th>QUANTITY</th>
+              <th>CUSTOMER</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {deliveries.map((delivery) => (
+              <tr key={delivery.id}>
+                <td>{delivery.delivery}</td>
+                <td>{delivery.product}</td>
+                <td>{delivery.quantity}</td>
+                <td>{delivery.customer}</td>
+                <td>
+                  <span className="status-badge">
+                    {delivery.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+)}
+
+{/* OTHER PAGES */}
+{activeMenu !== "Dashboard" &&
+ activeMenu !== "Products" &&
+ activeMenu !== "Receipts" &&
+ activeMenu !== "Deliveries" && (
+  <section className="coming-soon">
+    <div>↔</div>
+    <h2>{activeMenu}</h2>
+    <p>
+      This module will be connected to the StockSense
+      inventory system next.
+    </p>
+  </section>
+)}      </main>
     </div>
   );
 }
