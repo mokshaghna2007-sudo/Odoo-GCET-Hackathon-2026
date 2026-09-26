@@ -54,7 +54,6 @@ const saveDelivery = () => {
     alert("Please fill in all delivery details.");
     return;
   }
-
   setDeliveries((prev) => [
     ...prev,
     {
@@ -69,6 +68,127 @@ const saveDelivery = () => {
 
   setShowDeliveryForm(false);
 };
+const saveTransfer = () => {
+  const inputs = document.querySelectorAll("input");
+
+  const reference = inputs[inputs.length - 5].value.trim();
+  const productName = inputs[inputs.length - 4].value.trim();
+  const quantity = Number(inputs[inputs.length - 3].value);
+  const from = inputs[inputs.length - 2].value.trim();
+  const to = inputs[inputs.length - 1].value.trim();
+
+  if (!reference || !productName || !quantity || !from || !to) {
+    alert("Please fill in all transfer details.");
+    return;
+  }
+
+  if (quantity <= 0) {
+    alert("Quantity must be greater than 0.");
+    return;
+  }
+
+  if (from.toLowerCase() === to.toLowerCase()) {
+    alert("From and To locations must be different.");
+    return;
+  }
+
+  const product = products.find(
+    (item) =>
+      item.name.toLowerCase() === productName.toLowerCase()
+  );
+
+  if (!product) {
+    alert("Product not found.");
+    return;
+  }
+
+  if (quantity > product.stock) {
+    alert(
+      `Insufficient stock. Available stock for ${product.name}: ${product.stock}`
+    );
+    return;
+  }
+
+  setTransfers((prev) => [
+    ...prev,
+    {
+      id: Date.now(),
+      reference,
+      product: product.name,
+      quantity,
+      from,
+      to,
+      status: "Pending",
+    },
+  ]);
+
+  setShowTransferForm(false);
+};
+const saveAdjustment = () => {
+  const product = products.find(
+    (item) =>
+      item.name.toLowerCase() ===
+      newAdjustment.product.trim().toLowerCase()
+  );
+
+  if (
+    !newAdjustment.reference ||
+    !newAdjustment.product ||
+    newAdjustment.counted === "" ||
+    !newAdjustment.location
+  ) {
+    alert("Please fill in all adjustment details.");
+    return;
+  }
+
+  if (!product) {
+    alert("Product not found.");
+    return;
+  }
+
+  const counted = Number(newAdjustment.counted);
+
+  if (counted < 0) {
+    alert("Counted quantity cannot be negative.");
+    return;
+  }
+
+  const difference = counted - Number(product.stock);
+
+  setProducts((prevProducts) =>
+    prevProducts.map((item) =>
+      item.name === product.name
+        ? {
+            ...item,
+            stock: counted,
+          }
+        : item
+    )
+  );
+
+  setAdjustments((prevAdjustments) => [
+    ...prevAdjustments,
+    {
+      id: Date.now(),
+      reference: newAdjustment.reference,
+      product: product.name,
+      counted,
+      difference,
+      location: newAdjustment.location,
+      status: "Done",
+    },
+  ]);
+
+  setNewAdjustment({
+    reference: "",
+    product: "",
+    counted: "",
+    location: "",
+  });
+
+  setShowAdjustmentForm(false);
+};
+
 
 const [receipts, setReceipts] = useState([
   {
@@ -148,6 +268,38 @@ const [deliveries, setDeliveries] = useState([
     category: "Raw Material",
     uom: "m",
     stock: 250,
+  },
+]);
+const [showTransferForm, setShowTransferForm] = useState(false);
+const [showAdjustmentForm, setShowAdjustmentForm] = useState(false);
+
+const [adjustments, setAdjustments] = useState([
+  {
+    id: 1,
+    reference: "WH/ADJ/0001",
+    product: "Steel Sheets",
+    counted: 97,
+    difference: -3,
+    location: "Main Warehouse",
+    status: "Done",
+  },
+]);
+const [newAdjustment, setNewAdjustment] = useState({
+  reference: "",
+  product: "",
+  counted: "",
+  location: "",
+});
+
+const [transfers, setTransfers] = useState([
+  {
+    id: 1,
+    reference: "WH/INT/0001",
+    product: "Copper Wire",
+    quantity: 40,
+    from: "Main Warehouse",
+    to: "Production Rack",
+    status: "Done",
   },
 ]);
 
@@ -805,13 +957,427 @@ const [deliveries, setDeliveries] = useState([
     </div>
   </section>
 )}
+{activeMenu === "Transfers" && (
+<section className="page-section">
+  <div className="page-header">
+    <div>
+      <h1 style={{ color: "#0f172a" }}>
+        Internal Transfers
+      </h1>
 
+      <p style={{ color: "#64748b" }}>
+        Move stock between warehouse locations
+      </p>
+    </div>
+
+    <button
+      onClick={() => setShowTransferForm(true)}
+      style={{
+        background: "#2563eb",
+        color: "#ffffff",
+        border: "none",
+        padding: "12px 20px",
+        borderRadius: "10px",
+        fontSize: "14px",
+        fontWeight: "600",
+        cursor: "pointer",
+      }}
+    >
+      + New Transfer
+    </button>
+  </div>
+  {showTransferForm && (
+  <div
+    style={{
+      background: "#ffffff",
+      padding: "24px",
+      borderRadius: "16px",
+      marginBottom: "24px",
+      boxShadow: "0 4px 20px rgba(15, 23, 42, 0.08)",
+    }}
+  >
+    <h2 style={{ color: "#0f172a", marginBottom: "20px" }}>
+      New Internal Transfer
+    </h2>
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "16px",
+      }}
+    >
+      <input
+        type="text"
+        placeholder="Reference Number"
+      />
+
+      <input
+        type="text"
+        placeholder="Product Name"
+      />
+
+      <input
+        type="number"
+        placeholder="Quantity"
+      />
+
+      <input
+        type="text"
+        placeholder="From Location"
+      />
+
+      <input
+        type="text"
+        placeholder="To Location"
+      />
+    </div>
+
+    <div style={{ marginTop: "20px" }}>
+      <button
+        onClick={saveTransfer}
+        style={{
+          background: "#2563eb",
+          color: "#ffffff",
+          border: "none",
+          padding: "11px 20px",
+          borderRadius: "8px",
+          fontWeight: "600",
+          cursor: "pointer",
+          marginRight: "10px",
+        }}
+      >
+        Save Transfer
+      </button>
+
+      <button
+        onClick={() => setShowTransferForm(false)}
+        style={{
+          background: "#e2e8f0",
+          color: "#334155",
+          border: "none",
+          padding: "11px 20px",
+          borderRadius: "8px",
+          fontWeight: "600",
+          cursor: "pointer",
+        }}
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+)}
+    <div className="table-card">
+<div className="table-header">
+  <h2 style={{ color: "#0f172a" }}>
+    Recent Transfers
+  </h2>
+</div>
+      <table>
+        <thead>
+          <tr>
+            <th>REFERENCE</th>
+            <th>PRODUCT</th>
+            <th>QUANTITY</th>
+            <th>FROM</th>
+            <th>TO</th>
+            <th>STATUS</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {transfers.map((transfer) => (
+            <tr key={transfer.id}>
+              <td>{transfer.reference}</td>
+              <td>{transfer.product}</td>
+              <td>{transfer.quantity}</td>
+              <td>{transfer.from}</td>
+              <td>{transfer.to}</td>
+              <td>
+                <span className="status-badge">
+                  {transfer.status}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+)}
+{activeMenu === "Adjustments" && (
+  <section className="page-section">
+    <div className="page-header">
+      <div>
+        <h1 style={{ color: "#0f172a" }}>
+          Inventory Adjustments
+        </h1>
+
+        <p style={{ color: "#64748b" }}>
+          Correct stock quantities based on physical counts
+        </p>
+      </div>
+
+      <button
+        onClick={() => setShowAdjustmentForm(true)}
+        style={{
+          background: "#2563eb",
+          color: "#ffffff",
+          border: "none",
+          padding: "12px 20px",
+          borderRadius: "10px",
+          fontSize: "14px",
+          fontWeight: "600",
+          cursor: "pointer",
+        }}
+      >
+        + New Adjustment
+      </button>
+    </div>
+
+    {showAdjustmentForm && (
+      <div
+        style={{
+          background: "#ffffff",
+          padding: "24px",
+          borderRadius: "16px",
+          marginBottom: "24px",
+          boxShadow: "0 4px 20px rgba(15, 23, 42, 0.08)",
+        }}
+      >
+        <h2 style={{ color: "#0f172a", marginBottom: "20px" }}>
+          New Inventory Adjustment
+        </h2>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "16px",
+          }}
+        >
+          <input
+            type="text"
+            placeholder="Reference Number"
+            value={newAdjustment.reference}
+            onChange={(e) =>
+              setNewAdjustment({
+                ...newAdjustment,
+                reference: e.target.value,
+              })
+            }
+          />
+
+          <input
+            type="text"
+            placeholder="Product Name"
+            value={newAdjustment.product}
+            onChange={(e) =>
+              setNewAdjustment({
+                ...newAdjustment,
+                product: e.target.value,
+              })
+            }
+          />
+
+          <input
+            type="number"
+            placeholder="Counted Quantity"
+            value={newAdjustment.counted}
+            onChange={(e) =>
+              setNewAdjustment({
+                ...newAdjustment,
+                counted: e.target.value,
+              })
+            }
+          />
+
+          <input
+            type="text"
+            placeholder="Location"
+            value={newAdjustment.location}
+            onChange={(e) =>
+              setNewAdjustment({
+                ...newAdjustment,
+                location: e.target.value,
+              })
+            }
+          />
+        </div>
+
+        <div style={{ marginTop: "20px" }}>
+          <button
+            onClick={saveAdjustment}
+            style={{
+              background: "#2563eb",
+              color: "#ffffff",
+              border: "none",
+              padding: "11px 20px",
+              borderRadius: "8px",
+              fontWeight: "600",
+              cursor: "pointer",
+              marginRight: "10px",
+            }}
+          >
+            Save Adjustment
+          </button>
+
+          <button
+            onClick={() => setShowAdjustmentForm(false)}
+            style={{
+              background: "#e2e8f0",
+              color: "#334155",
+              border: "none",
+              padding: "11px 20px",
+              borderRadius: "8px",
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    )}
+
+    <div className="table-card">
+      <div className="table-header">
+        <h2 style={{ color: "#0f172a" }}>
+          Adjustment History
+        </h2>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>REFERENCE</th>
+            <th>PRODUCT</th>
+            <th>COUNTED</th>
+            <th>DIFFERENCE</th>
+            <th>LOCATION</th>
+            <th>STATUS</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {adjustments.map((adjustment) => (
+            <tr key={adjustment.id}>
+              <td>{adjustment.reference}</td>
+              <td>{adjustment.product}</td>
+              <td>{adjustment.counted}</td>
+              <td>
+                {adjustment.difference > 0
+                  ? `+${adjustment.difference}`
+                  : adjustment.difference}
+              </td>
+              <td>{adjustment.location}</td>
+              <td>
+                <span className="status-badge">
+                  {adjustment.status}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+)}
+{activeMenu === "Move History" && (
+  <section className="content-section">
+    <div className="page-header">
+      <div>
+        <h1>Move History</h1>
+        <p>Complete history of inventory movements</p>
+      </div>
+    </div>
+
+    <div className="table-card">
+      <h2>Stock Movement Ledger</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>REFERENCE</th>
+            <th>TYPE</th>
+            <th>PRODUCT</th>
+            <th>QUANTITY</th>
+            <th>FROM</th>
+            <th>TO</th>
+            <th>STATUS</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {[
+            ...receipts.map((item) => ({
+              reference: item.receipt,
+              type: "Receipt",
+              product: item.product,
+              quantity: item.quantity,
+              from: item.supplier,
+              to: "Main Warehouse",
+              status: item.status,
+            })),
+
+            ...deliveries.map((item) => ({
+              reference: item.delivery,
+              type: "Delivery",
+              product: item.product,
+              quantity: item.quantity,
+              from: "Main Warehouse",
+              to: item.customer,
+              status: item.status,
+            })),
+
+            ...transfers.map((item) => ({
+              reference: item.reference,
+              type: "Transfer",
+              product: item.product,
+              quantity: item.quantity,
+              from: item.from,
+              to: item.to,
+              status: item.status,
+            })),
+
+            ...adjustments.map((item) => ({
+              reference: item.reference,
+              type: "Adjustment",
+              product: item.product,
+              quantity: item.difference,
+              from: item.location,
+              to: "-",
+              status: item.status,
+            })),
+          ].map((move) => (
+            <tr key={`${move.type}-${move.reference}`}>
+              <td>{move.reference}</td>
+              <td>{move.type}</td>
+              <td>{move.product}</td>
+              <td>{move.quantity}</td>
+              <td>{move.from}</td>
+              <td>{move.to}</td>
+              <td>
+                <span className="status-badge">
+                  {move.status}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+)}
 {/* OTHER PAGES */}
 {activeMenu !== "Dashboard" &&
- activeMenu !== "Products" &&
- activeMenu !== "Receipts" &&
- activeMenu !== "Deliveries" && (
-  <section className="coming-soon">
+  activeMenu !== "Products" &&
+  activeMenu !== "Receipts" &&
+  activeMenu !== "Deliveries" &&
+  activeMenu !== "Transfers" &&
+  activeMenu !== "Adjustments" && 
+  activeMenu !== "Move History" && (
+      <section className="coming-soon">
     <div>↔</div>
     <h2>{activeMenu}</h2>
     <p>
